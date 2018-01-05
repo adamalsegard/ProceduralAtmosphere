@@ -18,6 +18,9 @@
     "url": "https://github.com/adamalsegard/ProceduralAtmosphere/issues"
   },
   "homepage": "https://github.com/adamalsegard/ProceduralAtmosphere#readme",
+  "directories": {
+    "static": "static"
+  },
   "dependencies": {
     "three": "^0.89.0"
   },
