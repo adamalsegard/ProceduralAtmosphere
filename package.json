@@ -1,0 +1,36 @@
+{
+  "name": "procedural-atmosphere",
+  "version": "1.0.0",
+  "description": "Render a procedural atmosphere with Rayleigh- and Mie-scattering.",
+  "main": "index.js",
+  "scripts": {
+    "start": "budo index.js:static/bundle.js --live",
+    "build": "browserify index.js -o static/bundle.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adamalsegard/ProceduralAtmosphere.git"
+  },
+  "author": "Adam Alsegård",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/adamalsegard/ProceduralAtmosphere/issues"
+  },
+  "homepage": "https://github.com/adamalsegard/ProceduralAtmosphere#readme",
+  "dependencies": {
+    "three": "^0.89.0"
+  },
+  "devDependencies": {
+    "browserify": "^15.0.0",
+    "budo": "^10.0.4",
+    "gl-geometry": "^3.1.1",
+    "gl-shader": "^4.2.1",
+    "glslify": "^6.1.0"
+  },
+  "browserify": {
+    "transform": [
+      "glslify"
+    ]
+  }
+}
