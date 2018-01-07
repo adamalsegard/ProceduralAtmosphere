@@ -13,7 +13,6 @@ var THREE = require('three');
 var glslify = require('glslify');
 
 var datGUI = require('./static/js/dat.gui.min.js');
-var FlyControls = require('three-fly-controls')(THREE);
 var OrbitControls = require('three-orbit-controls')(THREE);
 
 // Check if browser supports WebGL before rendering anything.
@@ -24,7 +23,41 @@ if (!isWebglEnabled) {
 /**
  * DECLARE VARIABLES
  */
-var camera, flyControl, orbitControl, scene, renderer, sky, sunSphere, theta;
+var camera,
+  orbitControl,
+  scene,
+  renderer,
+  sky,
+  sunSphere,
+  angleIncrease = 0.0005,
+  sunDist = 450000;
+
+// Starting settings in GUI
+var settingsMenu = {
+  turbidity: 10,
+  rayleigh: 2,
+  mieCoefficient: 0.00002,
+  mieScatteringDir: 0.758,
+  luminance: 1,
+  manualControl: true,
+  verticalAngle: 0.0, // Inclination/elevation of the sun
+  horizontalAngle: Math.PI*0.5, // Azimuthal angle
+  sun: !true,
+  angleStep: angleIncrease
+};
+
+/* Potential future setting
+22.0,           // intensity of the sun
+6371e3,         // radius of the planet in meters
+6471e3,         // radius of the atmosphere in meters
+vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
+21e-6,          // Mie scattering coefficient
+8e3,            // Rayleigh scale height
+1.2e3,          // Mie scale height
+0.758           // Mie preferred scattering direction
+
+Time speed-up, paus, slow-down
+*/
 
 // Set up listeners
 document.addEventListener('DOMContentLoaded', onDocumentLoaded, false);
@@ -32,7 +65,7 @@ window.addEventListener('resize', onWindowResize, false);
 window.addEventListener('error', onError);
 
 /**
- * INIT FUNCTION
+ * INIT FUNCTIONS
  */
 function initAtmosphere() {
   // Add Sky
@@ -40,93 +73,87 @@ function initAtmosphere() {
     vertexShader: glslify('./shaders/sky.vert'),
     fragmentShader: glslify('./shaders/sky.frag'),
     uniforms: {
-      luminance: { value: 1 },
-      turbidity: { value: 2 },
-      rayleigh: { value: 1 },
-      mieCoefficient: { value: 0.005 },
-      mieDirectionalG: { value: 0.8 },
+      luminance: { value: settingsMenu.luminance },
+      turbidity: { value: settingsMenu.turbidity },
+      rayleigh: { value: settingsMenu.rayleigh },
+      mieCoefficient: { value: settingsMenu.mieCoefficient },
+      mieScatteringDir: { value: settingsMenu.mieScatteringDir },
       sunPosition: { value: new THREE.Vector3() }
     },
     side: THREE.BackSide
   });
   var skyGeo = new THREE.SphereBufferGeometry(1, 32, 32);
   sky = new THREE.Mesh(skyGeo, skyMat);
-  sky.scale.setScalar(450000);
+  sky.scale.setScalar(sunDist);
   scene.add(sky);
 
-  // Add Sun Helper
+  // Add Sun Helper and hide it
   sunSphere = new THREE.Mesh(
-    new THREE.SphereBufferGeometry(20000, 16, 8),
+    new THREE.SphereBufferGeometry(4000, 16, 16),
     new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
-  sunSphere.position.y = -700000;
   sunSphere.visible = false;
   scene.add(sunSphere);
 }
 
-// Create GUI for settingsMenu
-function initGUI() {
-  
-  // Starting settings in GUI
-  var settingsMenu = {
-    turbidity: 10,
-    rayleigh: 2,
-    mieCoefficient: 0.005,
-    mieDirectionalG: 0.8,
-    luminance: 1,
-    inclination: 0.49, // elevation / inclination
-    azimuth: 0.25, // Facing front,
-    sun: !true
-  };
+// Callback function for settings changes
+function guiChanged() {
+  var uniforms = sky.material.uniforms;
+  uniforms.turbidity.value = settingsMenu.turbidity;
+  uniforms.rayleigh.value = settingsMenu.rayleigh;
+  uniforms.luminance.value = settingsMenu.luminance;
+  uniforms.mieCoefficient.value = settingsMenu.mieCoefficient;
+  uniforms.mieScatteringDir.value = settingsMenu.mieScatteringDir;
 
-  var distance = 400000;
+  if(settingsMenu.manualControl){
+    var theta = settingsMenu.verticalAngle; // [-pi, pi]
+    var phi = settingsMenu.horizontalAngle; // [-pi/2, pi/2]
 
-  // Callback function for settingsMenu changes
-  function guiChanged() {
-    var uniforms = sky.material.uniforms;
-    uniforms.turbidity.value = settingsMenu.turbidity;
-    uniforms.rayleigh.value = settingsMenu.rayleigh;
-    uniforms.luminance.value = settingsMenu.luminance;
-    uniforms.mieCoefficient.value = settingsMenu.mieCoefficient;
-    uniforms.mieDirectionalG.value = settingsMenu.mieDirectionalG;
-
-    var theta = Math.PI * (settingsMenu.inclination - 0.5); // [-pi/2, pi/2]
-    var phi = 2 * Math.PI * (settingsMenu.azimuth - 0.5); // [-pi, pi]
-
-    sunSphere.position.x = distance * Math.cos(phi);
-    sunSphere.position.y = distance * Math.sin(phi) * Math.sin(theta);
-    sunSphere.position.z = distance * Math.sin(phi) * Math.cos(theta);
-
-    sunSphere.visible = settingsMenu.sun;
-
+    sunSphere.position.x = sunDist * Math.cos(phi);
+    sunSphere.position.y = sunDist * Math.sin(phi) * Math.sin(theta);
+    sunSphere.position.z = sunDist * Math.sin(phi) * Math.cos(theta);
     uniforms.sunPosition.value.copy(sunSphere.position);
 
-    renderer.render(scene, camera);
+    angleIncrease = 0;
   }
+  else {
+    angleIncrease = settingsMenu.angleStep;
+  }
+  
+  sunSphere.visible = settingsMenu.sun;
 
+
+  renderer.render(scene, camera);
+}
+
+// Create GUI for the settings menu
+function initGUI() {
   var gui = new datGUI.GUI({
     autoPlace: false,
-    width: 400,
+    width: 300,
     name: 'Settings'
   });
 
+  gui.addFolder('Scattering params')
   gui.add(settingsMenu, 'turbidity', 1.0, 20.0, 0.1).onChange(guiChanged);
   gui.add(settingsMenu, 'rayleigh', 0.0, 4, 0.001).onChange(guiChanged);
-  gui
-    .add(settingsMenu, 'mieCoefficient', 0.0, 0.1, 0.001)
-    .onChange(guiChanged);
-  gui
-    .add(settingsMenu, 'mieDirectionalG', 0.0, 1, 0.001)
-    .onChange(guiChanged);
+  gui.add(settingsMenu, 'mieCoefficient', 0.0, 0.1, 0.001).onChange(guiChanged);
+  gui.add(settingsMenu, 'mieScatteringDir', 0.0, 1, 0.001).onChange(guiChanged);
   gui.add(settingsMenu, 'luminance', 0.0, 2).onChange(guiChanged);
-  gui.add(settingsMenu, 'inclination', 0, 1, 0.0001).onChange(guiChanged);
-  gui.add(settingsMenu, 'azimuth', 0, 1, 0.0001).onChange(guiChanged);
+  
+  gui.addFolder('Time & Sun placement')
+  gui.add(settingsMenu, 'manualControl').onChange(guiChanged);
+  gui.add(settingsMenu, 'verticalAngle', -Math.PI, Math.PI, 0.0001).onChange(guiChanged).listen();
+  gui.add(settingsMenu, 'horizontalAngle', -0.5*Math.PI, 0.5*Math.PI, 0.0001).onChange(guiChanged);
+  gui.add(settingsMenu, 'angleStep').onChange(guiChanged);
   gui.add(settingsMenu, 'sun').onChange(guiChanged);
+  
+  gui.addFolder('Landscape & cloud generation')
 
   document.body.appendChild(gui.domElement);
-    gui.domElement.style.position = "fixed";
-    gui.domElement.style.left = "2em";
-    gui.domElement.style.top = "5em";
+  gui.domElement.style.position = 'fixed';
+  gui.domElement.style.left = '2em';
+  gui.domElement.style.top = '2em';
 
   guiChanged();
 }
@@ -136,13 +163,15 @@ function initGUI() {
  */
 function renderLoop() {
   // Increase sun angle by time
+  settingsMenu.verticalAngle += angleIncrease;
+  var phi = settingsMenu.horizontalAngle += 0.001*angleIncrease
+  sunSphere.position.x = sunDist * Math.cos(phi);
+  sunSphere.position.y = sunDist * Math.sin(phi) * Math.sin(settingsMenu.verticalAngle);
+  sunSphere.position.z = sunDist * Math.sin(phi) * Math.cos(settingsMenu.verticalAngle);
   var uniforms = sky.material.uniforms;
-  theta += 0.0125;
-  //sunSphere.position.add()
-  //uniforms.sunPosition.value.copy(sunSphere.position);
+  uniforms.sunPosition.value.copy(sunSphere.position);
 
   renderer.render(scene, camera);
-
   requestAnimationFrame(renderLoop);
 }
 
@@ -162,7 +191,7 @@ function onDocumentLoaded() {
     10,
     2000000
   );
-  camera.position.set(0, 100, 2000);
+  camera.position.set(0, 10,-100); // Looks at origo -> make sure we see the sun at first
 
   // Set up the Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -178,16 +207,12 @@ function onDocumentLoaded() {
   // NOTE: OrbitControl has a problem with its 'mouseup' event (it need to be added at scope level, not document)
   // I fixed this on a local level in three-orbit-controls/index.js but if one downloads this the
   // same problem will rise again!
-  // Also: The FlyControl doesn't work...
-  //flyControl = new THREE.FlyControls(camera, renderer.domElement);
 
-  // Starting angle for the sun
-  theta = 0;
 
   // Init all shaders!
   initAtmosphere();
 
-  // Init settingsMenu
+  // Init settings menu
   initGUI();
 
   // Start render

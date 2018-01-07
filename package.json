@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "budo index.js:static/bundle.js --live",
-    "build": "browserify index.js -o static/bundle.js",
+    "build": "browserify index.js > static/bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -24,7 +24,6 @@
   "dependencies": {
     "dat.gui": "^0.6.5",
     "three": "^0.89.0",
-    "three-fly-controls": "^1.1.0",
     "three-orbit-controls": "^82.1.0"
   },
   "devDependencies": {
