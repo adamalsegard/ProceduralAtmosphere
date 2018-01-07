@@ -36,27 +36,21 @@ var camera,
 var settingsMenu = {
   turbidity: 10,
   rayleigh: 2,
-  mieCoefficient: 0.00002,
+  mieCoefficient: 0.005,
+  // According to GPU-gems the Mie scattering direction should be between -0.77 and -0.999
+  // (I've probably flipped the sign somewhere, or they misspelled up)
   mieScatteringDir: 0.758,
   luminance: 1,
   manualControl: true,
   verticalAngle: 0.0, // Inclination/elevation of the sun
-  horizontalAngle: Math.PI*0.5, // Azimuthal angle
+  horizontalAngle: Math.PI * 0.5, // Azimuthal angle
   sun: !true,
   angleStep: angleIncrease
 };
 
 /* Potential future setting
-22.0,           // intensity of the sun
-6371e3,         // radius of the planet in meters
-6471e3,         // radius of the atmosphere in meters
-vec3(5.5e-6, 13.0e-6, 22.4e-6), // Rayleigh scattering coefficient
-21e-6,          // Mie scattering coefficient
-8e3,            // Rayleigh scale height
-1.2e3,          // Mie scale height
-0.758           // Mie preferred scattering direction
+Intensity of the sun -> EE = Exposure!
 
-Time speed-up, paus, slow-down
 */
 
 // Set up listeners
@@ -78,7 +72,8 @@ function initAtmosphere() {
       rayleigh: { value: settingsMenu.rayleigh },
       mieCoefficient: { value: settingsMenu.mieCoefficient },
       mieScatteringDir: { value: settingsMenu.mieScatteringDir },
-      sunPosition: { value: new THREE.Vector3() }
+      sunPos: { value: new THREE.Vector3() },
+      cameraPos: { value: camera.position }
     },
     side: THREE.BackSide
   });
@@ -105,23 +100,21 @@ function guiChanged() {
   uniforms.mieCoefficient.value = settingsMenu.mieCoefficient;
   uniforms.mieScatteringDir.value = settingsMenu.mieScatteringDir;
 
-  if(settingsMenu.manualControl){
+  if (settingsMenu.manualControl) {
     var theta = settingsMenu.verticalAngle; // [-pi, pi]
     var phi = settingsMenu.horizontalAngle; // [-pi/2, pi/2]
 
     sunSphere.position.x = sunDist * Math.cos(phi);
     sunSphere.position.y = sunDist * Math.sin(phi) * Math.sin(theta);
     sunSphere.position.z = sunDist * Math.sin(phi) * Math.cos(theta);
-    uniforms.sunPosition.value.copy(sunSphere.position);
+    uniforms.sunPos.value.copy(sunSphere.position);
 
     angleIncrease = 0;
-  }
-  else {
+  } else {
     angleIncrease = settingsMenu.angleStep;
   }
-  
-  sunSphere.visible = settingsMenu.sun;
 
+  sunSphere.visible = settingsMenu.sun;
 
   renderer.render(scene, camera);
 }
@@ -134,21 +127,28 @@ function initGUI() {
     name: 'Settings'
   });
 
-  gui.addFolder('Scattering params')
+  gui.addFolder('Scattering params');
   gui.add(settingsMenu, 'turbidity', 1.0, 20.0, 0.1).onChange(guiChanged);
   gui.add(settingsMenu, 'rayleigh', 0.0, 4, 0.001).onChange(guiChanged);
   gui.add(settingsMenu, 'mieCoefficient', 0.0, 0.1, 0.001).onChange(guiChanged);
-  gui.add(settingsMenu, 'mieScatteringDir', 0.0, 1, 0.001).onChange(guiChanged);
+  gui
+    .add(settingsMenu, 'mieScatteringDir', -0.99, 0.99, 0.001)
+    .onChange(guiChanged);
   gui.add(settingsMenu, 'luminance', 0.0, 2).onChange(guiChanged);
-  
-  gui.addFolder('Time & Sun placement')
+
+  gui.addFolder('Time & Sun placement');
   gui.add(settingsMenu, 'manualControl').onChange(guiChanged);
-  gui.add(settingsMenu, 'verticalAngle', -Math.PI, Math.PI, 0.0001).onChange(guiChanged).listen();
-  gui.add(settingsMenu, 'horizontalAngle', -0.5*Math.PI, 0.5*Math.PI, 0.0001).onChange(guiChanged);
-  gui.add(settingsMenu, 'angleStep').onChange(guiChanged);
+  gui
+    .add(settingsMenu, 'verticalAngle', -Math.PI, Math.PI, 0.0001)
+    .onChange(guiChanged)
+    .listen();
+  gui
+    .add(settingsMenu, 'horizontalAngle', -0.5 * Math.PI, 0.5 * Math.PI, 0.0001)
+    .onChange(guiChanged);
+  gui.add(settingsMenu, 'angleStep', -0.01, 0.01, 0.00001).onChange(guiChanged);
   gui.add(settingsMenu, 'sun').onChange(guiChanged);
-  
-  gui.addFolder('Landscape & cloud generation')
+
+  gui.addFolder('Landscape & cloud generation');
 
   document.body.appendChild(gui.domElement);
   gui.domElement.style.position = 'fixed';
@@ -164,12 +164,18 @@ function initGUI() {
 function renderLoop() {
   // Increase sun angle by time
   settingsMenu.verticalAngle += angleIncrease;
-  var phi = settingsMenu.horizontalAngle += 0.001*angleIncrease
+  settingsMenu.horizontalAngle -= 0.001 * angleIncrease;
   sunSphere.position.x = sunDist * Math.cos(phi);
-  sunSphere.position.y = sunDist * Math.sin(phi) * Math.sin(settingsMenu.verticalAngle);
-  sunSphere.position.z = sunDist * Math.sin(phi) * Math.cos(settingsMenu.verticalAngle);
+  sunSphere.position.y =
+    sunDist *
+    Math.sin(settingsMenu.horizontalAngle) *
+    Math.sin(settingsMenu.verticalAngle);
+  sunSphere.position.z =
+    sunDist *
+    Math.sin(settingsMenu.horizontalAngle) *
+    Math.cos(settingsMenu.verticalAngle);
   var uniforms = sky.material.uniforms;
-  uniforms.sunPosition.value.copy(sunSphere.position);
+  uniforms.sunPos.value.copy(sunSphere.position);
 
   renderer.render(scene, camera);
   requestAnimationFrame(renderLoop);
@@ -191,7 +197,7 @@ function onDocumentLoaded() {
     10,
     2000000
   );
-  camera.position.set(0, 10,-100); // Looks at origo -> make sure we see the sun at first
+  camera.position.set(0, 10, -100); // Looks at origo -> make sure we see the sun at first.
 
   // Set up the Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -207,7 +213,9 @@ function onDocumentLoaded() {
   // NOTE: OrbitControl has a problem with its 'mouseup' event (it need to be added at scope level, not document)
   // I fixed this on a local level in three-orbit-controls/index.js but if one downloads this the
   // same problem will rise again!
-
+  orbitControl.addEventListener('change', () => {
+    sky.material.uniforms.cameraPos.value.copy(camera.position);
+  });
 
   // Init all shaders!
   initAtmosphere();
