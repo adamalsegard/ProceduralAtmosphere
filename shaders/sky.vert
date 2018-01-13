@@ -5,7 +5,7 @@
 
 precision highp float;
 
-// varying (out) to Fragment shader (sky.frag)
+// Varying (out) to Fragment shader (sky.frag)
 varying vec3 vWorldPos;
 
 void main() {

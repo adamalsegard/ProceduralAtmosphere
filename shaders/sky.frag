@@ -31,7 +31,7 @@ uniform float turbidity;
 uniform float luminance;
 uniform float sunExposure;
 
-// Varying (in) variables from Vertex shader (sky.frag)
+// Varying (in) variables from Vertex shader (sky.vert)
 varying vec3 vWorldPos;
 
 /**
