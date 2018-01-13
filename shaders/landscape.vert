@@ -22,7 +22,7 @@ varying vec3 vNormal;
 varying vec2 vUV;
 varying vec3 vViewPosition;
 
-// Later:
+// Shadow + Fog:
 //uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHTS ];
 //varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHTS ];
 //varying float fogDepth;
@@ -38,15 +38,14 @@ void main() {
   vec4 mvPosition = modelViewMatrix * vec4( displacedPosition, 1.0 );
 
   // Calculate varying variables.
-  vNormal = normalize( normalMatrix * normal );
+  vec3 normalTex = texture2D( tNormal, uvBase ).xyz * 2.0 - 1.0;
+  vNormal = normalize(normalMatrix * normalTex );
+  //vNormal = normalize( normalMatrix * normal );
   vTangent = normalize( normalMatrix * tangent.xyz );
   vBinormal = cross( vNormal, vTangent ) * tangent.w;
   vBinormal = normalize( vBinormal );
   vUV = uv;
   vViewPosition = -mvPosition.xyz;
-
-  vec3 normalTex = texture2D( tNormal, uvBase ).xyz * 2.0 - 1.0;
-  vNormal = normalMatrix * normalTex;
 
   gl_Position = projectionMatrix * mvPosition;
 

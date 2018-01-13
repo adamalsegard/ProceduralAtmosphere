@@ -201,7 +201,7 @@ function initLandscape() {
       tSpecular: { value: specularMap.texture },
       tDisplacement: { value: heightMap.texture },
 
-      uNormalScale: { value: 3.5 },
+      uNormalScale: { value: 1.5 },
       uDisplacementBias: { value: 0.0 },
       uDisplacementScale: { value: settingsMenu.displacementScale },
       uRepeatBase: { value: new THREE.Vector2(1, 1) },
@@ -213,7 +213,7 @@ function initLandscape() {
       specular: { value: new THREE.Color(0xffffff) },
       shininess: { value: 20 },
       lightDir: { value: sunSphere.position },
-      lightColor: { value: new THREE.Color(0x999999) },
+      lightColor: { value: new THREE.Color(0x333333) },
       lightIntensity: { value: 50000 }
     }
   });
@@ -242,7 +242,7 @@ function initLandscape() {
   BufferGeometryUtils.computeTangents(landscapeGeo);
 
   landscape = new THREE.Mesh(landscapeGeo, landscapeMat);
-  landscape.position.set(0, -250, 0);
+  landscape.position.set(0, -350, 0);
   landscape.rotation.x = -Math.PI / 2;
   scene.add(landscape);
 }
@@ -369,15 +369,15 @@ function renderLoop() {
     sunAltitude,
     0,
     1,
-    0.6,
+    0.5,
     3.5
   );
   landscapeMat.uniforms.lightIntensity.value = THREE.Math.mapLinear(
     sunAltitude,
     0,
     1,
-    60000,
-    30000
+    100000,
+    80000
   );
 
   var delta = clock.getDelta();
@@ -424,9 +424,9 @@ function onDocumentLoaded() {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  // Enable shadows. (TODO: this is not implemented yet!)
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // TODO: Enable shadows and add fog!
+  //renderer.shadowMap.enabled = true;
+  //renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
   // Set up navigation Controls

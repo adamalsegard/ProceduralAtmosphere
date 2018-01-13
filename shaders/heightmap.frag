@@ -16,10 +16,10 @@ float genSurface( vec3 coord ) {
 
   float n = 0.0;
 
-  n += 1.0 * abs( snoise( coord ) );
-  n += 0.5 * abs( snoise( coord * 2.0 ) );
-  n += 0.25 * abs( snoise( coord * 4.0 ) );
-  n += 0.125 * abs( snoise( coord * 8.0 ) );
+  n += 0.7 * (snoise(coord));
+  n += 0.4 * abs(snoise(coord * 3.0));
+  n += 0.3 * abs(snoise(coord * 5.0));
+  n += 0.2 * abs(snoise(coord * 10.0));
 
   return n;
 }

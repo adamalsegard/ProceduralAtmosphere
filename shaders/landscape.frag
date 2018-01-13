@@ -79,9 +79,8 @@ void main() {
   float dotNL = max( dot( normal, normLightDir ), 0.0 );
   float specularWeight = specularTex.r * max( pow( dotNH, shininess ), 0.0 );
   totalDiffuseLight = lightColor * dotNL;
-  totalSpecularLight = lightColor * specular * specularWeight * dotNL;
+  totalSpecularLight = specular * specularWeight * dotNL;
   
-
   outgoingLight += diffuseColor.xyz * ( ambient + totalDiffuseLight + totalSpecularLight );
 
   gl_FragColor = vec4( outgoingLight, diffuseColor.a );
