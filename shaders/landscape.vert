@@ -30,14 +30,16 @@ varying vec3 vViewPosition;
 void main() {
 
   vec2 uvBase = uv * uRepeatBase;
+
+  // Apply displacement generated from heightmap.
   vec3 displaceVertex = texture2D( tDisplacement, uvBase ).xyz;
   float displaceFinal = uDisplacementScale * displaceVertex.x + uDisplacementBias;
   vec3 displacedPosition = normal * displaceFinal + position;
 
-  vec4 worldPosition = modelMatrix * vec4( displacedPosition, 1.0 );
+  //vec4 worldPosition = modelMatrix * vec4( displacedPosition, 1.0 ); // For shadows
   vec4 mvPosition = modelViewMatrix * vec4( displacedPosition, 1.0 );
 
-  // Calculate varying variables.
+  // Calculate varying variables for tangent space.
   vec3 normalTex = texture2D( tNormal, uvBase ).xyz * 2.0 - 1.0;
   vNormal = normalize(normalMatrix * normalTex );
   //vNormal = normalize( normalMatrix * normal );

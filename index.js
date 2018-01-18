@@ -34,7 +34,7 @@ var camera,
   sunSphere,
   angleIncrease = 0.0005,
   horizontalAngleInc = 0.001,
-  landscapeSize = 10000,
+  landscapeSize = 10240,
   mapResolution = 512,
   sunDist = 450000,
   heightMap,
@@ -45,8 +45,10 @@ var camera,
   landscape,
   loadingManager,
   textureLoader,
-  clock = new THREE.Clock();
-animateLandscape = false;
+  repeatBase = 1,
+  repeatOverlay = 20,
+  clock = new THREE.Clock(),
+  animateLandscape = false;
 
 // Starting settings in GUI.
 var settingsMenu = {
@@ -130,18 +132,18 @@ function initLandscape() {
   sceneRenderMaps.add(cameraOrtho);
 
   /** HEIGHT MAP AND NORMAL MAP **/
-  var rx = mapResolution,
-    ry = mapResolution;
-  var pars = {
+  var resX = mapResolution,
+    resY = mapResolution;
+  var params = {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.LinearFilter,
     format: THREE.RGBFormat
   };
 
-  heightMap = new THREE.WebGLRenderTarget(rx, ry, pars);
+  heightMap = new THREE.WebGLRenderTarget(resX, resY, params);
   heightMap.texture.generateMipmaps = false;
 
-  normalMap = new THREE.WebGLRenderTarget(rx, ry, pars);
+  normalMap = new THREE.WebGLRenderTarget(resX, resY, params);
   normalMap.texture.generateMipmaps = false;
 
   // Create a shader program for the height map.
@@ -171,23 +173,23 @@ function initLandscape() {
     }
   });
 
-  // Set up textures.
-  var specularMap = new THREE.WebGLRenderTarget(
-    mapResolution * 2,
-    mapResolution * 2,
-    pars
-  );
-  specularMap.texture.generateMipmaps = false;
+  /** SET UP TEXTURES **/
+  var specTexture1 = new THREE.WebGLRenderTarget(resX, resY, params);
+  specTexture1.texture.generateMipmaps = false;
 
-  // TODO: Change these textures?
-  var diffuseTexture1 = textureLoader.load('./tex/grasslight-big.jpg'); 
-  var diffuseTexture2 = textureLoader.load('./tex/ground_dirt.jpg');
-  var detailTexture = textureLoader.load('./tex/grasslight-big-nm.jpg');
+  // Read textures
+  var diffuseTexture1 = textureLoader.load('./tex/clover/clover_lush.png');
+  var normalTexture1 = textureLoader.load('./tex/clover/clover_nm.png');
+  var diffuseTexture2 = textureLoader.load('./tex/ground/ground_diff.png');
+  var normalTexture2 = textureLoader.load('./tex/ground/ground_normal.png');
+  var specTexture2 = textureLoader.load('./tex/ground/ground_spec.png');
 
   diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
+  normalTexture1.wrapS = normalTexture1.wrapT = THREE.RepeatWrapping;
+  specTexture1.texture.wrapS = specTexture1.texture.wrapT = THREE.RepeatWrapping;
   diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-  detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-  specularMap.texture.wrapS = specularMap.texture.wrapT = THREE.RepeatWrapping;
+  normalTexture2.wrapS = normalTexture2.wrapT = THREE.RepeatWrapping;
+  specTexture2.wrapS = specTexture2.wrapT = THREE.RepeatWrapping;
 
   // Create a shader program for the landscape!
   landscapeMat = new THREE.ShaderMaterial({
@@ -195,25 +197,27 @@ function initLandscape() {
     fragmentShader: glslify('./shaders/landscape.frag'),
     uniforms: {
       tDiffuse1: { value: diffuseTexture1 },
+      tDetail1: { value: normalTexture1 },
+      tSpecular1: { value: specTexture1.texture },
       tDiffuse2: { value: diffuseTexture2 },
-      tDetail: { value: detailTexture },
+      tDetail2: { value: normalTexture2 },
+      tSpecular2: { value: specTexture2 },
+
       tNormal: { value: normalMap.texture },
-      tSpecular: { value: specularMap.texture },
       tDisplacement: { value: heightMap.texture },
 
       uNormalScale: { value: 1.5 },
       uDisplacementBias: { value: 0.0 },
       uDisplacementScale: { value: settingsMenu.displacementScale },
-      uRepeatBase: { value: new THREE.Vector2(1, 1) },
-      uRepeatOverlay: { value: new THREE.Vector2(8, 8) },
+      uRepeatBase: { value: new THREE.Vector2(repeatBase, repeatBase) },
+      uRepeatOverlay: { value: new THREE.Vector2(repeatOverlay, repeatOverlay) },
       uOffset: { value: new THREE.Vector2(0, 0) },
 
-      ambient: { value: new THREE.Color(0x555555) },
-      diffuse: { value: new THREE.Color(0xffffff) },
-      specular: { value: new THREE.Color(0xffffff) },
+      ambient: { value: new THREE.Color(0x666666) },
+      diffuse: { value: new THREE.Color(0x777777) },
+      specular: { value: new THREE.Color(0x555555) },
       shininess: { value: 20 },
       lightDir: { value: sunSphere.position },
-      lightColor: { value: new THREE.Color(0x333333) },
       lightIntensity: { value: 50000 }
     }
   });
