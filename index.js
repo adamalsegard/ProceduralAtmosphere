@@ -46,7 +46,8 @@ var camera,
   loadingManager,
   textureLoader,
   repeatBase = 1,
-  repeatOverlay = 20,
+  repeatOverlay = 40,
+  gridHelper,
   clock = new THREE.Clock(),
   animateLandscape = false;
 
@@ -67,9 +68,10 @@ var settingsMenu = {
   sunExposure: 1000.0, // Intensity of the sun
   // Landscape settings:
   showLandscape: true,
+  showGridHelper: true,
   heightmapScale: 5,
   animateLandscape: false,
-  normalHeight: 0.5,
+  normalHeight: 0.08,
   displacementScale: 375
 };
 
@@ -246,7 +248,7 @@ function initLandscape() {
   BufferGeometryUtils.computeTangents(landscapeGeo);
 
   landscape = new THREE.Mesh(landscapeGeo, landscapeMat);
-  landscape.position.set(0, -350, 0);
+  landscape.position.set(0, -50, 0);
   landscape.rotation.x = -Math.PI / 2;
   scene.add(landscape);
 }
@@ -290,8 +292,9 @@ function guiChanged() {
   animateLandscape = settingsMenu.animateLandscape;
   normalMapMat.uniforms.height.value = settingsMenu.normalHeight;
   landscape.visible = settingsMenu.showLandscape;
-  landscapeMat.uniforms.uDisplacementScale.value =
+  landscape.material.uniforms.uDisplacementScale.value =
     settingsMenu.displacementScale;
+  gridHelper.visible = settingsMenu.showGridHelper;
 
   renderer.render(scene, camera);
 }
@@ -331,6 +334,7 @@ function initGUI() {
 
   // Folder for procedural landscape.
   var f3 = gui.addFolder('Landscape & cloud generation');
+  f3.add(settingsMenu, 'showGridHelper').onChange(guiChanged);
   f3.add(settingsMenu, 'showLandscape').onChange(guiChanged);
   f3.add(settingsMenu, 'animateLandscape').onChange(guiChanged);
   f3.add(settingsMenu, 'heightmapScale', 0.1, 30, 0.1).onChange(guiChanged);
@@ -369,14 +373,14 @@ function renderLoop() {
   var sunAltitude =
     Math.sin(settingsMenu.horizontalAngle) *
     Math.sin(settingsMenu.verticalAngle);
-  landscapeMat.uniforms.uNormalScale.value = THREE.Math.mapLinear(
+  landscape.material.uniforms.uNormalScale.value = THREE.Math.mapLinear(
     sunAltitude,
     0,
     1,
     0.5,
     3.5
   );
-  landscapeMat.uniforms.lightIntensity.value = THREE.Math.mapLinear(
+  landscape.material.uniforms.lightIntensity.value = THREE.Math.mapLinear(
     sunAltitude,
     0,
     1,
@@ -412,8 +416,8 @@ function renderLoop() {
 function onDocumentLoaded() {
   // Set up the Scene
   scene = new THREE.Scene();
-  var grid = new THREE.GridHelper(10000, 2, 0xffffff, 0xffffff);
-  scene.add(grid);
+  gridHelper = new THREE.GridHelper(10000, 2, 0xffffff, 0xffffff);
+  scene.add(gridHelper);
 
   // Set up the Camera
   camera = new THREE.PerspectiveCamera(
@@ -422,7 +426,7 @@ function onDocumentLoaded() {
     10,
     2000000
   );
-  camera.position.set(0, 10, -100); // Looks towards origo -> make sure we see the sun at first.
+  camera.position.set(0, 100, -500); // Looks towards origo -> make sure we see the sun at first.
 
   // Set up the Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });

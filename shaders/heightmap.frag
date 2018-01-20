@@ -1,6 +1,6 @@
 /**
  * FRAGMENT SHADER
- * Computes a heightmap
+ * Computes a procedural heightmap.
  */
 
 precision highp float;
@@ -12,6 +12,7 @@ uniform float time;
 // Varying (in) variables from Vertex shader (heightmap.vert)
 varying vec2 vUV;
 
+// Generate a procedural surface with simplex noise.
 float genSurface( vec3 coord ) {
 
   float n = 0.0;

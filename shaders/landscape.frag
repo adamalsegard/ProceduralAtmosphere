@@ -75,6 +75,7 @@ void main() {
   vec4 colDiffuse1 = texture2D( tDiffuse1, uvOverlay );
   vec4 colDiffuse2 = texture2D( tDiffuse2, uvOverlay );
   
+  // Transform to [-1, 1] again
   vec3 normalTex1 = texture2D( tDetail1, uvOverlay ).xyz * 2.0 - 1.0;
   normalTex1.xy *= uNormalScale;
   normalTex1 = normalize( normalTex1 );
@@ -95,19 +96,19 @@ void main() {
 
   // Transform normals to model space.
   mat3 TBN = mat3( vTangent, vBinormal, vNormal );
-  vec3 finalNormal = transpose(TBN) * combinedNormalTex; // TODO: check!
-  finalNormal = normalize( finalNormal );
+  vec3 finalNormal = transpose(TBN) * combinedNormalTex;
+  finalNormal = normalize( vNormal ); // TODO: Switch back after tangent's been fixed.
   
 
   // Blinn-Phong (half-vector) for directional lights.
   vec3 viewPosition = normalize( vViewPosition );
-  vec3 normLightDir =  lightDir / vec3(lightIntensity);
+  vec3 normLightDir = lightDir / vec3(lightIntensity);
   vec3 halfVector = normalize( normLightDir + viewPosition );
   float dotNH = max( dot( finalNormal, halfVector ), 0.0 );
   float dotNL = max( dot( finalNormal, normLightDir ), 0.0 );
   float specularWeight = combinedSpecTex.r * max( pow( dotNH, shininess ), 0.0 );
   totalDiffuseLight = diffuse * dotNL;
-  totalSpecularLight = specular * specularWeight * dotNL;
+  totalSpecularLight = specular * specularWeight;
   
   outgoingLight += diffuseColor.xyz * ( ambient + totalDiffuseLight + totalSpecularLight );
 

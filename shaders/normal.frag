@@ -15,11 +15,19 @@ varying vec2 vUV;
 
 void main() {
 
-  float val = texture2D( heightMap, vUV ).x;
-  
-  float valU = texture2D( heightMap, vUV + vec2( 1.0 / resolution.x, 0.0 ) ).x;
-  float valV = texture2D( heightMap, vUV + vec2( 0.0, 1.0 / resolution.y ) ).x;
+  float dx = 1.0 / resolution.x;
+  float dz = 1.0 / resolution.y;
 
-  gl_FragColor = vec4( (0.5 * normalize(vec3(val - valU, val - valV, height)) + 0.5), 1.0 );
+  float n0 = texture2D( heightMap, vUV ).x;
+  
+  float nU = texture2D( heightMap, vUV + vec2(dx, 0.0) ).x;
+  float nV = texture2D( heightMap, vUV + vec2(0.0, dz) ).x;
+
+  //vec3 nX = vec3(dx, nU - n0, 0.0);
+  //vec3 nZ = vec3(0.0, nV - n0, dz);
+  //gl_FragColor = vec4(normalize(cross(nZ, nX)) * 0.5 + 0.5, 1.0);
+  
+  // Transform to [0, 1]
+  gl_FragColor = vec4( (0.5 * normalize(vec3(n0 - nU, n0 - nV, height)) + 0.5), 1.0 );
 
 }

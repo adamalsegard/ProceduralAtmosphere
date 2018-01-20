@@ -1,6 +1,6 @@
 /**
  * VERTEX SHADER
- * Computes a heightmap
+ * Computes a procedural heightmap.
  */
 
 precision highp float;
