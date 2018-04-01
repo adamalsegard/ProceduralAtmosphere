@@ -153,7 +153,8 @@ void main() {
   // Use a cutoff angle at 90 to avoid singularity in next formula.
 	float zenithAngle = acos( max( 0.0, dot( upDir, viewDir ) ) );
   // Unfortunately a lot of "magic constants" in this one that I can't find explanations for...
-	float denom = 1.0 / ( cos( zenithAngle ) + 0.15 * pow( 93.885 - ( ( zenithAngle * 180.0 ) / PI ), -1.253 ) );
+  float avgDensityHeight = 0.25;
+	float denom = 1.0 / ( cos( zenithAngle ) + avgDensityHeight * pow( 93.885 - ( ( zenithAngle * 180.0 ) / PI ), -1.253 ) );
 	float rayOpticalDepth = rayleighZenithLength * denom;
 	float mieOpticalDepth = mieZenithLength * denom;
 
@@ -172,7 +173,7 @@ void main() {
 
   // Calculate the phase functions. (How much light is scattered towards the camera.)
   // For Rayleigh the g constant can be omitted for an approximation.
-	float rayPhase = rayleighPhase( cosTheta * 0.5 + 0.5 );
+	float rayPhase = rayleighPhase( cosTheta * 0.5 + 0.5 ); // [0, 1]
 	vec3 betaRayTheta = totalRayleighCoeff * rayPhase;
 
   // For Mie phase the g constant (mieScatteringDir) should be between [-0.75, -0.999] (according to GPU-gems).

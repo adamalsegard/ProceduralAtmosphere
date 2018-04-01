@@ -14,6 +14,8 @@ uniform sampler2D tDisplacement;
 uniform float uDisplacementScale;
 uniform float uDisplacementBias;
 uniform vec2 uRepeatBase;
+uniform vec3 lightDir;
+uniform vec3 cameraPos;
 
 // Varying (out) to Fragment shader (landscape.frag)
 varying vec3 vTangent;
@@ -21,11 +23,17 @@ varying vec3 vBinormal;
 varying vec3 vNormal;
 varying vec2 vUV;
 varying vec3 vViewPosition;
+varying vec3 vLightDir;
 
 // Shadow + Fog:
 //uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHTS ];
 //varying vec4 vDirectionalShadowCoord[ NUM_DIR_LIGHTS ];
 //varying float fogDepth;
+
+// Rotation with PI / 2.0 around x-axis to counter the landscape rot added later.
+const mat3 rotMatForLandscape = mat3(1, 0, 0, // Column 1
+                                    0, 0, 1, // Column 2 
+                                    0, -1, 0); // Column 3
 
 void main() {
 
@@ -47,7 +55,8 @@ void main() {
   vBinormal = cross( vNormal, vTangent ) * tangent.w;
   vBinormal = normalize( vBinormal );
   vUV = uv;
-  vViewPosition = -mvPosition.xyz;
+  vLightDir = vec3(modelViewMatrix * vec4( rotMatForLandscape * lightDir, 1.0 ) - mvPosition);
+  vViewPosition = vec3(modelViewMatrix * vec4( rotMatForLandscape * cameraPos, 1.0 ) - mvPosition);
 
   gl_Position = projectionMatrix * mvPosition;
 

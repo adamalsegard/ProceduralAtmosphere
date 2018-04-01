@@ -1,8 +1,7 @@
 {
   "name": "procedural-atmosphere",
   "version": "1.0.0",
-  "description":
-    "A procedurally generated landscape with an atmosphere rendered with Rayleigh- and Mie-scattering.",
+  "description": "A procedurally generated landscape with an atmosphere rendered with Rayleigh- and Mie-scattering.",
   "main": "index.js",
   "scripts": {
     "start": "budo index.js:static/bundle.js --live",
@@ -32,6 +31,8 @@
     "glslify": "^6.1.0"
   },
   "browserify": {
-    "transform": ["glslify"]
+    "transform": [
+      "glslify"
+    ]
   }
 }

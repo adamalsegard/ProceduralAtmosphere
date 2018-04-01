@@ -11,7 +11,6 @@ uniform vec3 diffuse;
 uniform vec3 specular;
 uniform float shininess;
 
-uniform vec3 lightDir;
 uniform vec3 lightColor;
 uniform float lightIntensity;
 
@@ -36,6 +35,7 @@ varying vec3 vBinormal;
 varying vec3 vNormal;
 varying vec2 vUV;
 varying vec3 vViewPosition;
+varying vec3 vLightDir;
 
 // Fog: (for shadows we need even more)
 //uniform vec3 fogColor;
@@ -102,7 +102,7 @@ void main() {
 
   // Blinn-Phong (half-vector) for directional lights.
   vec3 viewPosition = normalize( vViewPosition );
-  vec3 normLightDir = lightDir / vec3(lightIntensity);
+  vec3 normLightDir = vLightDir / vec3(lightIntensity);
   vec3 halfVector = normalize( normLightDir + viewPosition );
   float dotNH = max( dot( finalNormal, halfVector ), 0.0 );
   float dotNL = max( dot( finalNormal, normLightDir ), 0.0 );

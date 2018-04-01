@@ -207,6 +207,7 @@ function initLandscape() {
 
       tNormal: { value: normalMap.texture },
       tDisplacement: { value: heightMap.texture },
+      cameraPos: { value: camera.position },
 
       uNormalScale: { value: 1.5 },
       uDisplacementBias: { value: 0.0 },
@@ -215,7 +216,7 @@ function initLandscape() {
       uRepeatOverlay: { value: new THREE.Vector2(repeatOverlay, repeatOverlay) },
       uOffset: { value: new THREE.Vector2(0, 0) },
 
-      ambient: { value: new THREE.Color(0x666666) },
+      ambient: { value: new THREE.Color(0x333333) },
       diffuse: { value: new THREE.Color(0x777777) },
       specular: { value: new THREE.Color(0x555555) },
       shininess: { value: 20 },
